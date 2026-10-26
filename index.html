@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>万智牌生涯个人喜好表</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#e6e6e6;color:#111;
+    font:14px/1.5 system-ui,-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.locked{overflow:hidden}
+  header{max-width:1240px;margin:0 auto;padding:26px 20px 6px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;letter-spacing:.5px}
+  header .hint{color:#777;font-size:12px}
+  main{max-width:1240px;margin:0 auto;padding:14px 20px 60px;display:flex;gap:20px;align-items:flex-start}
+  .stage{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .canvas-wrap{position:relative;line-height:0;max-width:100%}
+  canvas#grid{
+    display:block;max-width:100%;height:auto;background:#fff;cursor:pointer;
+    border-radius:4px;box-shadow:0 6px 22px rgba(0,0,0,.10);
+  }
+  .tip{color:#888;font-size:12px;text-align:center}
+
+  aside.panel{flex:0 0 320px;width:320px;display:flex;flex-direction:column;gap:12px}
+  .card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .card h3{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.5px;color:#333}
+  .card h3 small{font-weight:400;color:#999}
+  input[type=text],input[type=number],textarea,select{
+    width:100%;font:inherit;padding:8px 10px;border:1.5px solid #ccc;border-radius:5px;background:#fff;outline:none;color:#111;
+  }
+  input:focus,textarea:focus,select:focus{border-color:#111}
+  textarea{resize:vertical;line-height:1.6;font-size:13px}
+  .row2{display:flex;gap:8px}
+  .row2>*{flex:1;min-width:0}
+  label.f{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:#444;margin-top:8px}
+  .chk input{width:auto}
+  button{
+    font:inherit;cursor:pointer;border:1.5px solid #111;background:#fff;color:#111;
+    padding:8px 12px;border-radius:5px;font-weight:600;transition:background .12s,color .12s;
+  }
+  button:hover{background:#111;color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:disabled:hover{background:#fff;color:#111}
+  button.primary{background:#111;color:#fff}
+  button.primary:hover{background:#333}
+  button.big{width:100%;padding:12px;font-size:15px}
+  button.danger{border-color:#c0392b;color:#c0392b}
+  button.danger:hover{background:#c0392b;color:#fff}
+  button.mini{padding:5px 9px;font-size:12px;font-weight:500}
+
+  /* 弹窗 */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:24px 14px;z-index:50}
+  .modal[hidden]{display:none}
+  .sheet{
+    background:#fff;border-radius:10px;width:min(1040px,100%);max-height:100%;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.35)
+  }
+  .sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #eee}
+  .sheet-head h2{margin:0;font-size:15px;font-weight:700}
+  .sheet-head .celltag{font-size:12px;color:#888}
+  .sheet-head .x{margin-left:auto;border:none;background:none;font-size:18px;line-height:1;padding:6px 8px;color:#666;font-weight:400}
+  .sheet-head .x:hover{background:#f2f2f2;color:#111}
+  .sheet-body{display:flex;gap:0;overflow:hidden;min-height:0;flex:1 1 auto}
+  .pane{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .pane.search{flex:1 1 52%;border-right:1px solid #eee;padding:14px 16px}
+  .pane.versions{flex:1 1 48%;padding:14px 16px;background:#fafafa}
+  .pane.versions[hidden]{display:none}
+  form.searchbar{display:flex;gap:8px;margin:0}
+  form.searchbar input{flex:1}
+  .sugg{margin-top:6px;border:1px solid #e2e2e2;border-radius:5px;overflow:hidden;max-height:180px;overflow-y:auto}
+  .sugg[hidden]{display:none}
+  .sugg div{padding:7px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid #f2f2f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sugg div:last-child{border-bottom:none}
+  .sugg div:hover,.sugg div.on{background:#f0f0f0}
+  .results{
+    margin-top:12px;overflow-y:auto;flex:1 1 auto;display:grid;gap:10px;
+    grid-template-columns:repeat(auto-fill,minmax(104px,1fr));align-content:start;padding-right:2px
+  }
+  .ritem{cursor:pointer;border-radius:6px;padding:4px;transition:background .12s}
+  .ritem:hover{background:#f0f0f0}
+  .ritem.on{background:#e4e4e4;outline:1.5px solid #111}
+  .ritem img{width:100%;display:block;border-radius:5px;background:#eee;aspect-ratio:488/680}
+  .ritem p{margin:5px 0 0;font-size:11.5px;line-height:1.35;color:#333;word-break:break-word}
+  .ritem p span{color:#999;display:block;font-size:11px}
+  .note{font-size:12px;color:#999;margin-top:10px}
+  .note.err{color:#c0392b}
+  .versions-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .versions-head strong{font-size:13.5px}
+  .langs{display:flex;gap:4px;margin-left:auto}
+  .langs button{padding:3px 8px;font-size:12px;border:1.2px solid #ccc;color:#444;font-weight:500;background:#fff}
+  .langs button.on{background:#111;border-color:#111;color:#fff}
+  .vlist{overflow-y:auto;flex:1 1 auto;display:flex;flex-direction:column;gap:6px;padding-right:2px}
+  .vitem{display:flex;gap:10px;padding:6px;border-radius:6px;cursor:pointer;align-items:center;transition:background .12s}
+  .vitem:hover{background:#ededed}
+  .vitem img{width:64px;border-radius:4px;background:#e6e6e6;aspect-ratio:488/680;object-fit:cover;flex:0 0 auto}
+  .vmeta{min-width:0;font-size:12px;line-height:1.45}
+  .vmeta .vname{font-size:12.5px;font-weight:600;color:#111;word-break:break-word}
+  .vmeta .vsub{color:#666;word-break:break-word}
+  .vmeta .vsub.dim{color:#aaa}
+  .sheet-foot{border-top:1px solid #eee;padding:12px 16px;display:flex;flex-direction:column;gap:8px;background:#fff}
+  .sheet-foot .fr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .sheet-foot .fr label{font-size:12px;color:#666;flex:0 0 auto}
+  .sheet-foot .fr input[type=text]{flex:1 1 200px;width:auto}
+  #previewSheet{width:min(820px,100%)}
+  #previewSheet img{max-width:100%;display:block;margin:0 auto;border-radius:6px;background:#fff}
+  .preview-body{padding:16px;overflow:auto}
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#111;color:#fff;
+    padding:9px 16px;border-radius:999px;font-size:13px;z-index:99;opacity:0;transition:opacity .2s;pointer-events:none
+  }
+  .toast.on{opacity:1}
+  .results.loading{opacity:.45;pointer-events:none;transition:opacity .15s}
+  .canvas-tools{display:none}
+  .cell-list{display:none}
+
+  @media (max-width:1000px){
+    main{flex-direction:column;align-items:stretch}
+    aside.panel{width:auto;flex:1 1 auto}
+    .sheet-body{flex-direction:column;overflow-y:auto}
+    .pane.search{border-right:none;border-bottom:1px solid #eee}
+    .pane.versions{max-height:52vh}
+    .pane.search{max-height:none}
+    .results{max-height:46vh}
+  }
+
+  /* ---------- 移动端 ---------- */
+  @media (max-width:760px){
+    header{padding:16px 14px 4px;gap:6px}
+    header h1{font-size:17px}
+    header .hint{font-size:11.5px;line-height:1.5}
+    main{padding:10px 14px 44px;gap:14px}
+    .stage{gap:10px}
+    .tip{font-size:12px}
+
+    .canvas-tools{display:flex;justify-content:center;width:100%}
+    .canvas-wrap{width:100%}
+    body.canvas-zoom .canvas-wrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+    body.canvas-zoom canvas#grid{cursor:default}
+
+    .cell-list{
+      display:flex;flex-direction:column;gap:8px;width:100%;
+    }
+    .cell-list::before{
+      content:'格子列表 · 直接改格名，或点「选择」放卡牌';
+      font-size:12px;color:#888;padding:2px 2px 0;
+    }
+    .cell-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .cell-row .idx{flex:0 0 auto;width:18px;text-align:center;color:#bbb;font-size:12px}
+    .cell-row .thumb{
+      flex:0 0 auto;width:40px;height:56px;border-radius:4px;background:#f2f2f2;object-fit:cover;
+      display:flex;align-items:center;justify-content:center;color:#ccc;font-size:20px;line-height:1;
+    }
+    .cell-row .meta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+    .cell-row .label-input{width:100%;font-size:16px;padding:6px 8px;border:1.5px solid #ddd;border-radius:6px;min-width:0}
+    .cell-row .sub{font-size:11px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cell-row .acts{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+    .cell-row .acts button{padding:5px 9px;font-size:12px;font-weight:600}
+
+    aside.panel{width:auto}
+    .export-card{order:-1}
+    .panel .card{padding:12px}
+    input[type=text],input[type=number],textarea,select{font-size:16px}
+
+    /* 弹窗全屏 */
+    .modal{padding:0}
+    .sheet{width:100%;height:100%;max-height:100%;border-radius:0}
+    .sheet-head{padding:12px 14px}
+    .sheet-body{flex-direction:column;overflow-y:auto}
+    .pane.search{padding:12px 14px 16px}
+    .pane.versions{padding:12px 14px 16px;background:#fff;border-top:1px solid #eee;max-height:none}
+    .results{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:none;overflow:visible;padding-right:0}
+    .ritem img{border-radius:6px}
+    .vitem img{width:56px}
+    .langs{width:100%;margin-left:0;justify-content:flex-start;flex-wrap:wrap}
+    .langs button{padding:6px 12px;font-size:13px}
+    form.searchbar input{font-size:16px;padding:10px 12px}
+    form.searchbar button{padding:10px 16px}
+    .sheet-foot{padding:10px 14px;gap:10px;position:sticky;bottom:0;box-shadow:0 -6px 16px rgba(0,0,0,.07)}
+    .sheet-foot .fr{flex-wrap:wrap}
+    .sheet-foot .fr label{display:none}
+    .sheet-foot .fr input[type=text]{flex:1 1 100%}
+    .sheet-foot .fr button{flex:1 1 auto;padding:10px 12px}
+    #previewSheet{width:100%;height:100%}
+    #previewSheet .preview-body{flex:1 1 auto;display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px}
+    #previewSheet .preview-body img{max-width:100%;max-height:100%;width:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>万智牌生涯个人喜好表</h1>
+  <span class="hint">点击格子选择卡牌 · 右侧可改格名与网格 · 生成图片导出</span>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="canvas-wrap"><canvas id="grid"></canvas></div>
+    <div class="canvas-tools"><button class="mini" id="zoomToggle">查看原尺寸</button></div>
+    <div class="tip">点击任意格子 → 搜索卡牌 → 选择版本</div>
+    <section class="cell-list" id="cellList"></section>
+  </section>
+
+  <aside class="panel">
+    <div class="card">
+      <h3>标题</h3>
+      <input type="text" id="titleInput" placeholder="表头标题">
+    </div>
+
+    <div class="card">
+      <h3>网格尺寸</h3>
+      <div class="row2">
+        <label class="f">列数<input type="number" id="colsInput" min="1" max="8" step="1"></label>
+        <label class="f">行数<input type="number" id="rowsInput" min="1" max="8" step="1"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>格名 <small>每行一个，共 <b id="labelCount">0</b> 个</small></h3>
+      <textarea id="labelsInput" rows="9" spellcheck="false"></textarea>
+      <div class="row2" style="margin-top:8px">
+        <button class="mini" id="defaultLabelsBtn">套用默认格名</button>
+        <button class="mini" id="clearLabelsBtn">清空格名</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>页脚</h3>
+      <input type="text" id="footerInput">
+      <label class="chk"><input type="checkbox" id="footerShow"> 显示页脚</label>
+    </div>
+
+    <div class="card export-card">
+      <h3>导出</h3>
+      <div class="row2" style="margin-bottom:8px">
+        <select id="fmtSel">
+          <option value="png">PNG（无损）</option>
+          <option value="jpeg">JPG（体积小）</option>
+        </select>
+        <select id="scaleSel">
+          <option value="1">1x</option>
+          <option value="2" selected>2x</option>
+          <option value="3">3x</option>
+        </select>
+      </div>
+      <button class="primary big" id="exportBtn">生成图片</button>
+    </div>
+
+    <div class="card">
+      <h3>配置</h3>
+      <div class="row2" style="margin-bottom:8px">
+        <button class="mini" id="saveJsonBtn">导出配置</button>
+        <button class="mini" id="loadJsonBtn">导入配置</button>
+      </div>
+      <button class="danger mini" id="resetBtn" style="width:100%">清空所有格子</button>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+  </aside>
+</main>
+
+<!-- 卡牌选择弹窗 -->
+<div class="modal" id="picker" hidden>
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>选择卡牌</h2>
+      <span class="celltag" id="cellTag"></span>
+      <button class="x" data-close>✕</button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="pane search">
+        <form class="searchbar" id="searchForm" autocomplete="off">
+          <input type="text" id="q" placeholder="卡牌名称，回车搜索（中文名可直接输入）">
+          <button type="submit" class="primary" id="searchBtn">搜索</button>
+        </form>
+        <div class="sugg" id="sugg" hidden></div>
+        <div class="note" id="searchNote"></div>
+        <div class="results" id="results"></div>
+      </div>
+
+      <div class="pane versions" id="versionsPane" hidden>
+        <div class="versions-head">
+          <button class="mini" id="backBtn">← 返回</button>
+          <strong id="vName"></strong>
+          <div class="langs" id="langs">
+            <button data-lang="en" class="on">英文</button>
+            <button data-lang="zhs">简中</button>
+            <button data-lang="zht">繁中</button>
+            <button data-lang="ja">日文</button>
+          </div>
+        </div>
+        <div class="vlist" id="vlist"></div>
+        <div style="padding-top:8px"><button class="mini" id="morePrints" hidden>加载更多版本</button></div>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <div class="fr">
+        <label>标签文字</label>
+        <input type="text" id="capInput" placeholder="留空则使用默认格名">
+        <button class="mini" id="capSaveBtn">保存标签</button>
+      </div>
+      <div class="fr">
+        <label>或填文字</label>
+        <input type="text" id="freeText" placeholder="不配图，直接在格里写字">
+        <button class="mini" id="textBtn">填入文字</button>
+        <button class="mini danger" id="clearBtn">清空此格</button>
+        <button class="mini" data-close>关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 预览弹窗 -->
+<div class="modal" id="preview" hidden>
+  <div class="sheet" id="previewSheet">
+    <div class="sheet-head">
+      <h2>生成完成</h2>
+      <span class="celltag" id="previewSize"></span>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="preview-body"><img id="previewImg" alt="生成的喜好表"></div>
+    <div class="sheet-foot">
+      <div class="fr">
+        <a id="downloadLink" download><button class="primary">下载图片</button></a>
+        <span class="note" style="margin:0">移动端可长按图片保存</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   常量
+   ============================================================ */
+const SAPI = 'https://api.scryfall.com';
+const STORE_KEY = 'mtg-grid-v1';
+const CARD_RATIO = 488 / 680;
+
+const COL_W = 150;                             // 单元格逻辑宽度
+const IMG_W = COL_W - 2;                       // 卡图宽度
+const IMG_H = Math.round(IMG_W / CARD_RATIO);  // 卡图高度（与卡面比例严格一致，不裁切不变形）
+const CAP_H = 26;                              // 格名条高度
+const ROW_H = IMG_H + 1 + CAP_H;
+const SEP_Y = IMG_H + 1;                       // 卡图与格名之间的细分隔线
+const MARGIN = 20;
+const TITLE_H = 46;
+const FOOTER_H = 22;
+
+const RARITY_CN = {common:'普通',uncommon:'非普通',rare:'稀有',mythic:'秘稀',special:'特殊',bonus:'附赠'};
+
+// 默认格名沿用 anime-grid（动画生涯个人喜好表）的分类；5列×3行时取前 15 个
+const DEFAULT_LABELS = [
+  '入坑作','最喜欢','看最多次','最想安利','最佳剧情',
+  '最佳画面','最佳配乐','最佳配音','最治愈','最感动',
+  '最虐心','最被低估','最过誉','最离谱','最讨厌'
+];
+
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  title: '万智牌生涯个人喜好表',
+  cols: 5,
+  rows: 3,
+  labels: DEFAULT_LABELS.slice(),
+  cells: new Array(15).fill(null),
+  footer: '卡牌数据与图像来自 Scryfall · 万智牌版权归 Wizards of the Coast',
+  showFooter: true,
+  format: 'png',
+  scale: 2
+};
+
+let hoverIndex = -1;
+let currentIndex = null;     // 弹窗中正在编辑的格子
+let currentCard = null;      // 弹窗中选中的卡牌（用于列版本）
+let printPageUrl = null;
+let printLang = 'en';
+
+/* 语言选择：搜索中文名时默认看简中印张；打开已有格子时沿用该卡语言 */
+function setLang(lang){
+  printLang = lang || 'en';
+  document.querySelectorAll('#langs button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.lang === printLang);
+  });
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+const toastEl = $('toast');
+let toastTimer = null;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove('on'), 2200);
+}
+
+/* ============================================================
+   Scryfall 请求（串行节流 + 内存缓存）
+   ============================================================ */
+const reqCache = new Map();
+let chain = Promise.resolve();
+
+function api(url){
+  if(!reqCache.has(url)){
+    const p = chain.then(async ()=>{
+      for(let attempt = 0; attempt < 3; attempt++){
+        await sleep(90);
+        let res;
+        try{
+          res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        }catch(err){
+          const e = new Error('网络请求失败，请检查网络或代理');
+          e.status = 0;
+          throw e;
+        }
+        if(res.status === 429){ await sleep(1200 * (attempt + 1)); continue; } // 限流退避重试
+        if(res.status === 404){
+          const e = new Error('没有找到结果');
+          e.status = 404;
+          throw e;
+        }
+        if(!res.ok){
+          const e = new Error('Scryfall 返回错误 ' + res.status);
+          e.status = res.status;
+          throw e;
+        }
+        return res.json();
+      }
+      const e = new Error('Scryfall 请求过于频繁，请稍后再试');
+      e.status = 429;
+      throw e;
+    });
+    chain = p.catch(()=>{});
+    reqCache.set(url, p);
+    // 失败的缓存移除，允许重试
+    p.catch(()=>reqCache.delete(url));
+  }
+  return reqCache.get(url);
+}
+
+function cardImage(card, size){
+  size = size || 'normal';
+  if(card.image_uris && card.image_uris[size]) return card.image_uris[size];
+  if(card.card_faces){
+    for(const f of card.card_faces){
+      if(f.image_uris && f.image_uris[size]) return f.image_uris[size];
+    }
+  }
+  return null;
+}
+
+/* 图片：fetch → blob → objectURL，保证 canvas 不被污染，导出不受 CORS 限制 */
+const imgCache = new Map();
+function ensureImage(url, onReady){
+  if(!url) return null;
+  let entry = imgCache.get(url);
+  if(entry){ if(entry.loaded && onReady) onReady(entry.img); return entry; }
+  entry = { img: null, loaded: false, failed: false };
+  imgCache.set(url, entry);
+  (async ()=>{
+    try{
+      await sleep(60 + Math.random() * 80); // 轻微错峰，避免瞬时并发过多
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.decoding = 'async';
+      await new Promise((resolve, reject)=>{
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = objUrl;
+      });
+      entry.img = img;
+      entry.loaded = true;
+      if(onReady) onReady(img);
+      draw();
+    }catch(err){
+      entry.failed = true;
+      console.warn('图片加载失败', url, err);
+    }
+  })();
+  return entry;
+}
+
+/* ============================================================
+   画布尺寸与绘制
+   ============================================================ */
+const canvas = $('grid');
+const ctx = canvas.getContext('2d');
+
+function geom(){
+  const contentW = state.cols * COL_W;
+  const contentH = state.rows * ROW_H;
+  const footerH = state.showFooter && state.footer ? FOOTER_H : 0;
+  const W = contentW + MARGIN * 2;
+  const H = TITLE_H + contentH + MARGIN * 2 + footerH;
+  return { contentW, contentH, footerH, W, H };
+}
+
+function resizeCanvas(){
+  const g = geom();
+  const scale = 2; // 画布固定 2 倍，屏幕用 CSS 缩放
+  canvas.width = Math.round(g.W * scale);
+  canvas.height = Math.round(g.H * scale);
+  applyCanvasWidth();
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+}
+
+// 画布显示宽度：默认适应容器；移动端可切换到 1:1 原尺寸（横向滚动）
+function applyCanvasWidth(){
+  const g = geom();
+  const zoom = document.body.classList.contains('canvas-zoom');
+  canvas.style.width = g.W + 'px';
+  canvas.style.maxWidth = zoom ? 'none' : '100%';
+}
+
+$('zoomToggle').addEventListener('click', ()=>{
+  const on = document.body.classList.toggle('canvas-zoom');
+  $('zoomToggle').textContent = on ? '适应宽度' : '查看原尺寸';
+  applyCanvasWidth();
+});
+
+function font(size, weight){
+  return (weight ? weight + ' ' : '') + size + 'px system-ui,-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif';
+}
+
+function fitText(text, maxWidth){
+  const t = String(text || '');
+  if(ctx.measureText(t).width <= maxWidth) return t;
+  let s = t;
+  while(s.length > 1 && ctx.measureText(s + '…').width > maxWidth) s = s.slice(0, -1);
+  return s + '…';
+}
+
+function drawWrappedText(text, cx, cy, maxWidth, lineHeight, maxLines){
+  const chars = String(text || '').split('');
+  const lines = [];
+  let cur = '';
+  let overflow = false;
+  for(let i = 0; i < chars.length; i++){
+    const test = cur + chars[i];
+    if(cur && ctx.measureText(test).width > maxWidth){
+      if(lines.length === maxLines - 1){ overflow = true; break; }
+      lines.push(cur);
+      cur = chars[i];
+    }else{
+      cur = test;
+    }
+  }
+  if(cur) lines.push(cur);
+  if(overflow && lines.length){
+    lines[lines.length - 1] = fitText(lines[lines.length - 1] + '…', maxWidth);
+    const last = lines[lines.length - 1];
+    lines[lines.length - 1] = last.endsWith('…') ? last : last + '…';
+  }
+  const startY = cy - (lines.length - 1) * lineHeight / 2;
+  lines.forEach((ln, i)=> ctx.fillText(ln, cx, startY + i * lineHeight));
+}
+
+function labelOf(index){
+  const cell = state.cells[index];
+  if(cell && cell.caption) return cell.caption;
+  return state.labels[index] || '';
+}
+
+function drawCellImage(cell, x, y, w, h){
+  const url = cell.card && cell.card.image;
+  if(!url){
+    ctx.fillStyle = '#f3f3f3';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#b5b5b5';
+    ctx.font = font(12);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('无图片', x + w / 2, y + h / 2);
+    return;
+  }
+  const entry = imgCache.get(url);
+  if(!entry || !entry.loaded){
+    ctx.fillStyle = '#efefef';
+    ctx.fillRect(x, y, w, h);
+    if(entry && entry.failed){
+      ctx.fillStyle = '#c0392b';
+      ctx.font = font(12);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('图片加载失败', x + w / 2, y + h / 2);
+    }
+    return;
+  }
+  const img = entry.img;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const ir = iw / ih, cr = w / h;
+  let sx, sy, sw, sh;
+  if(ir > cr){ sh = ih; sw = ih * cr; sx = (iw - sw) / 2; sy = 0; }
+  else { sw = iw; sh = iw / cr; sx = 0; sy = (ih - sh) / 2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+function draw(){
+  const g = geom();
+  const scale = 2;
+
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, g.W, g.H);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, g.W, g.H);
+
+  const originX = MARGIN;
+  const originY = TITLE_H + MARGIN;
+  const contentW = g.contentW;
+
+  // 标题
+  ctx.font = font(30, 'bold');
+  ctx.fillStyle = '#111';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(fitText(state.title || '', contentW), originX + contentW / 2, MARGIN + TITLE_H / 2 - 2);
+
+  ctx.save();
+  ctx.translate(originX, originY);
+
+  // 格子内容
+  for(let i = 0; i < state.cols * state.rows; i++){
+    const cx = (i % state.cols) * COL_W;
+    const cy = Math.floor(i / state.cols) * ROW_H;
+    const cell = state.cells[i];
+
+    if(cell && cell.kind === 'text' && cell.text){
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(cx + 1, cy + 1, IMG_W, IMG_H);
+      ctx.fillStyle = '#111';
+      ctx.font = font(20, 'bold');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      drawWrappedText(cell.text, cx + COL_W / 2, cy + IMG_H / 2, IMG_W - 18, 26, 4);
+    }else if(cell && cell.card){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cx + 1, cy + 1, IMG_W, IMG_H);
+      ctx.clip();
+      drawCellImage(cell, cx + 1, cy + 1, IMG_W, IMG_H);
+      ctx.restore();
+    }else{
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(cx + 1, cy + 1, IMG_W, IMG_H);
+    }
+
+    // 卡图与格名之间的细分隔线
+    ctx.fillStyle = '#e2e2e2';
+    ctx.fillRect(cx + 1, cy + SEP_Y, IMG_W, 1);
+
+    // 格名
+    const label = labelOf(i);
+    if(label){
+      ctx.font = font(14);
+      ctx.fillStyle = '#222';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(fitText(label, COL_W - 12), cx + COL_W / 2, cy + SEP_Y + CAP_H / 2 + 1);
+    }
+  }
+
+  // 网格线
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 1;
+  for(let y = 0; y <= state.rows; y++){
+    ctx.beginPath();
+    ctx.moveTo(0, y * ROW_H);
+    ctx.lineTo(contentW, y * ROW_H);
+    ctx.stroke();
+  }
+  for(let x = 0; x <= state.cols; x++){
+    ctx.beginPath();
+    ctx.moveTo(x * COL_W, 0);
+    ctx.lineTo(x * COL_W, state.rows * ROW_H);
+    ctx.stroke();
+  }
+
+  // 悬停高亮
+  if(hoverIndex >= 0 && hoverIndex < state.cols * state.rows){
+    const cx = (hoverIndex % state.cols) * COL_W;
+    const cy = Math.floor(hoverIndex / state.cols) * ROW_H;
+    ctx.fillStyle = 'rgba(0,0,0,.52)';
+    ctx.fillRect(cx + 2, cy + 2, COL_W - 4, IMG_H - 1);
+    ctx.fillStyle = '#fff';
+    ctx.font = font(14, 'bold');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const has = state.cells[hoverIndex];
+    ctx.fillText(has ? '点击更换' : '点击选择卡牌', cx + COL_W / 2, cy + IMG_H / 2);
+  }
+
+  ctx.restore();
+
+  // 页脚
+  if(g.footerH && state.footer){
+    ctx.font = font(10);
+    ctx.fillStyle = '#aaa';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fitText(state.footer, contentW), MARGIN, g.H - MARGIN + 2);
+  }
+}
+
+/* ============================================================
+   交互：画布点击 / 悬停
+   ============================================================ */
+function hitTest(ev){
+  const g = geom();
+  const rect = canvas.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) / rect.width * g.W - MARGIN;
+  const y = (ev.clientY - rect.top) / rect.height * g.H - (TITLE_H + MARGIN);
+  if(x < 0 || y < 0) return -1;
+  const c = Math.floor(x / COL_W);
+  const r = Math.floor(y / ROW_H);
+  if(c < 0 || c >= state.cols || r < 0 || r >= state.rows) return -1;
+  return r * state.cols + c;
+}
+
+canvas.addEventListener('mousemove', ev=>{
+  const i = hitTest(ev);
+  if(i !== hoverIndex){ hoverIndex = i; draw(); }
+});
+canvas.addEventListener('mouseleave', ()=>{ if(hoverIndex !== -1){ hoverIndex = -1; draw(); } });
+canvas.addEventListener('click', ev=>{
+  const i = hitTest(ev);
+  if(i < 0) return;
+  openPicker(i);
+});
+
+/* ============================================================
+   弹窗：卡牌搜索与版本选择
+   ============================================================ */
+const pickerEl = $('picker');
+const qInput = $('q');
+const suggEl = $('sugg');
+const resultsEl = $('results');
+const searchNoteEl = $('searchNote');
+const versionsPane = $('versionsPane');
+const vlistEl = $('vlist');
+const vNameEl = $('vName');
+const morePrintsBtn = $('morePrints');
+
+function openPicker(index){
+  currentIndex = index;
+  currentCard = null;
+  printPageUrl = null;
+  versionsPane.hidden = true;
+  resultsEl.innerHTML = '';
+  resultsEl._cards = [];
+  suggEl.hidden = true;
+  suggEl.innerHTML = '';
+
+  const label = state.labels[index] || '';
+  const cell = state.cells[index];
+  setLang(cell && cell.card && cell.card.lang ? cell.card.lang : 'en');
+  $('cellTag').textContent = '第 ' + (index + 1) + ' 格' + (label ? ' · ' + label : '');
+  $('capInput').value = (cell && cell.caption) || '';
+  $('freeText').value = (cell && cell.kind === 'text' && cell.text) || '';
+  setSearchBusy(false);
+  setSearchNote(cell && cell.card
+    ? '已选卡牌，可直接重新搜索替换。点击下方卡牌查看全部版本。'
+    : '输入卡牌名称后点「搜索」或按回车；中文名可直接输入（自动匹配简中/繁中/日文印张）。');
+
+  qInput.value = (cell && cell.card && (cell.card.printed_name || cell.card.name)) || '';
+  pickerEl.hidden = false;
+  document.body.classList.add('locked');
+  setTimeout(()=> qInput.focus(), 40);
+
+  if(cell && cell.card) renderResults([cardToResult(cell.card)]);
+}
+
+function closeModal(el){
+  el.hidden = true;
+  document.body.classList.remove('locked');
+}
+
+pickerEl.addEventListener('click', ev=>{
+  if(ev.target === pickerEl) closeModal(pickerEl);
+});
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click', ()=> closeModal(b.closest('.modal')));
+});
+document.addEventListener('keydown', ev=>{
+  if(ev.key === 'Escape'){
+    document.querySelectorAll('.modal:not([hidden])').forEach(m=> closeModal(m));
+  }
+});
+
+/* --- 搜索 --- */
+const hasCJK = s => /[\u3400-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\uF900-\uFAFF]/.test(s);
+const hasSyntax = s => /[a-z_]+:/i.test(s);
+
+async function searchCards(raw){
+  const q = String(raw || '').trim();
+  if(!q) return [];
+  const queries = [];
+  // 中文名：一次请求覆盖简中/繁中/日文，避免逐个语言串行重试造成长时间无响应
+  if(hasCJK(q) && !hasSyntax(q)) queries.push(q + ' (lang:zhs or lang:zht or lang:ja)');
+  queries.push(q);
+  for(const query of queries){
+    const url = SAPI + '/cards/search?q=' + encodeURIComponent(query) + '&unique=cards&order=name&dir=asc';
+    try{
+      const data = await api(url);
+      return data.data || [];
+    }catch(err){
+      if(err.status === 404) continue;
+      throw err;
+    }
+  }
+  return [];
+}
+
+let searchSeq = 0;
+let searching = false;
+
+function setSearchNote(text, isErr){
+  searchNoteEl.className = 'note' + (isErr ? ' err' : '');
+  searchNoteEl.textContent = text || '';
+}
+
+function setSearchBusy(busy){
+  searching = busy;
+  const btn = $('searchBtn');
+  btn.disabled = busy;
+  btn.textContent = busy ? '搜索中…' : '搜索';
+  resultsEl.classList.toggle('loading', busy);
+}
+
+async function runSearch(){
+  const kw = String(qInput.value || '').trim();
+  suggEl.hidden = true;
+  if(!kw){
+    setSearchNote('请输入卡牌名称再搜索。', true);
+    qInput.focus();
+    return;
+  }
+  if(searching) return;
+  const seq = ++searchSeq;
+  setLang(hasCJK(kw) ? 'zhs' : 'en');
+  setSearchBusy(true);
+  setSearchNote('正在搜索「' + kw + '」…');
+  const slowTimer = setTimeout(()=>{
+    if(seq === searchSeq && searching) setSearchNote('正在搜索「' + kw + '」…网络较慢，请稍候');
+  }, 2500);
+
+  try{
+    const cards = await searchCards(kw);
+    if(seq !== searchSeq) return;
+    if(!cards.length){
+      resultsEl.innerHTML = '';
+      resultsEl._cards = [];
+      setSearchNote('没有找到「' + kw + '」。中文名请用官方译名，或改用英文名搜索。', true);
+      return;
+    }
+    // 名称相关度排序：完全命中 > 前缀命中 > 包含 > 其他
+    const k = kw.toLowerCase();
+    const rank = n => {
+      const s = String(n || '').toLowerCase();
+      if(s === k) return 3;
+      if(s.startsWith(k)) return 2;
+      if(s.includes(k)) return 1;
+      return 0;
+    };
+    cards.sort((a, b)=> rank(b.name) - rank(a.name));
+    const shown = cards.slice(0, 60);
+    setSearchNote(cards.length > shown.length
+      ? '命中 ' + cards.length + ' 张，显示前 ' + shown.length + ' 张；加关键词可缩小范围。'
+      : '命中 ' + cards.length + ' 张，点击卡牌查看全部版本。');
+    renderResults(shown);
+  }catch(err){
+    if(seq !== searchSeq) return;
+    setSearchNote(err.message || '搜索失败，请重试。', true);
+  }finally{
+    clearTimeout(slowTimer);
+    if(seq === searchSeq) setSearchBusy(false);
+  }
+}
+
+function cardToResult(card){
+  return {
+    id: card.id, name: card.name,
+    printed_name: card.printed_name || '',
+    set: card.set, set_name: card.set_name,
+    collector_number: card.collector_number,
+    rarity: card.rarity, released_at: card.released_at, lang: card.lang,
+    image_uris: card.image ? { normal: card.image } : null,
+    thumb: card.thumb || card.image,
+    _stored: true
+  };
+}
+
+function renderResults(cards){
+  resultsEl.innerHTML = cards.map((c, i)=>{
+    const img = c._stored ? c.thumb : cardImage(c, 'small');
+    const nm = c.printed_name || c.name;
+    const sub = c._stored ? (c.set_name || '') : (c.set_name || '');
+    return '<div class="ritem" data-i="' + i + '">' +
+      (img ? '<img src="' + esc(img) + '" loading="lazy" alt="">' : '<img alt="">') +
+      '<p>' + esc(nm) + '<span>' + esc(sub) + '</span></p></div>';
+  }).join('');
+  resultsEl._cards = cards;
+  resultsEl.querySelectorAll('.ritem').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      resultsEl.querySelectorAll('.ritem.on').forEach(x=> x.classList.remove('on'));
+      el.classList.add('on');
+      const card = resultsEl._cards[+el.dataset.i];
+      if(card && card._stored){
+        // 已保存的版本：直接回到该版本的版本列表
+        currentCard = { name: card.name, prints_search_uri: SAPI + '/cards/search?q=' + encodeURIComponent('!"' + card.name + '"') + '&unique=prints' };
+      }else{
+        currentCard = card;
+      }
+      loadVersions(card, printLang);
+    });
+  });
+}
+
+/* --- 版本列表 --- */
+function printsUrl(card, lang){
+  const name = String(card.name || '').replace(/"/g, '');
+  let q = '!"' + name + '"';
+  if(lang && lang !== 'en') q += ' lang:' + lang;
+  return SAPI + '/cards/search?q=' + encodeURIComponent(q) + '&unique=prints&order=released&dir=desc';
+}
+
+async function loadVersions(card, lang){
+  versionsPane.hidden = false;
+  vNameEl.textContent = (card.printed_name || card.name) + (card.printed_name && card.printed_name !== card.name ? ' / ' + card.name : '');
+  vlistEl.innerHTML = '<div class="note">载入版本…</div>';
+  morePrintsBtn.hidden = true;
+  setLang(lang || printLang || 'en');
+  try{
+    const data = await api(printsUrl(card, printLang));
+    printPageUrl = data.next_page || null;
+    renderVersions(data.data || []);
+  }catch(err){
+    if(err.status === 404){
+      vlistEl.innerHTML = '<div class="note err">该语言没有找到印张，试试其他语言。</div>';
+    }else{
+      vlistEl.innerHTML = '<div class="note err">' + esc(err.message) + '</div>';
+    }
+  }
+}
+
+function renderVersions(cards, append){
+  const html = cards.map((c, i)=>{
+    const img = cardImage(c, 'small') || cardImage(c, 'normal') || '';
+    const nm = c.printed_name || c.name;
+    const meta = [
+      c.set_name + ' (' + c.set.toUpperCase() + ')',
+      '#' + c.collector_number,
+      RARITY_CN[c.rarity] || c.rarity,
+      c.released_at || ''
+    ].join(' · ');
+    const extra = [c.lang, c.border_color === 'borderless' ? '无边' : '', c.promo ? '赠卡' : '', c.digital ? '数字' : ''].filter(Boolean).join(' · ');
+    return '<div class="vitem" data-i="' + i + '">' +
+      '<img src="' + esc(img) + '" loading="lazy" alt="">' +
+      '<div class="vmeta"><div class="vname">' + esc(nm) + '</div>' +
+      '<div class="vsub">' + esc(meta) + '</div>' +
+      '<div class="vsub dim">' + esc(extra) + '</div></div></div>';
+  }).join('');
+
+  if(!append) vlistEl.innerHTML = '';
+  if(!cards.length && !append) vlistEl.innerHTML = '<div class="note">没有更多版本。</div>';
+  vlistEl.insertAdjacentHTML('beforeend', html);
+
+  vlistEl.querySelectorAll('.vitem:not([data-bound])').forEach(el=>{
+    el.setAttribute('data-bound', '1');
+    el.addEventListener('click', ()=>{
+      const card = (el._cards || vlistEl._cards)[+el.dataset.i];
+      applyCard(card);
+    });
+  });
+  vlistEl._cards = append ? (vlistEl._cards || []).concat(cards) : cards;
+  // 重新绑定索引
+  vlistEl.querySelectorAll('.vitem').forEach((el, i)=>{ el.dataset.i = i; el._cards = vlistEl._cards; });
+  morePrintsBtn.hidden = !printPageUrl;
+}
+
+morePrintsBtn.addEventListener('click', async ()=>{
+  if(!printPageUrl) return;
+  morePrintsBtn.disabled = true;
+  try{
+    const data = await api(printPageUrl);
+    printPageUrl = data.next_page || null;
+    renderVersions(data.data || [], true);
+  }catch(err){
+    toast(err.message || '加载失败');
+  }finally{
+    morePrintsBtn.disabled = false;
+  }
+});
+
+document.querySelectorAll('#langs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    setLang(b.dataset.lang);
+    if(currentCard) loadVersions(currentCard, printLang);
+  });
+});
+
+$('backBtn').addEventListener('click', ()=>{ versionsPane.hidden = true; qInput.focus(); });
+
+/* --- 应用卡牌到格子 --- */
+function applyCard(card){
+  if(currentIndex === null) return;
+  const image = cardImage(card, 'large') || cardImage(card, 'normal') || '';
+  const cell = state.cells[currentIndex] || {};
+  const caption = (cell.caption || $('capInput').value || '').trim();
+  state.cells[currentIndex] = {
+    kind: 'card',
+    caption: caption,
+    card: {
+      id: card.id,
+      name: card.name,
+      printed_name: card.printed_name || '',
+      set: card.set,
+      set_name: card.set_name,
+      collector_number: card.collector_number,
+      rarity: card.rarity,
+      released_at: card.released_at,
+      lang: card.lang,
+      image: image
+    }
+  };
+  ensureImage(image);
+  persist();
+  draw();
+  syncMobile();
+  closeModal(pickerEl);
+  toast('已放入第 ' + (currentIndex + 1) + ' 格');
+}
+
+/* --- 文字格 / 清空 / 标签 --- */
+$('textBtn').addEventListener('click', ()=>{
+  const t = $('freeText').value.trim();
+  if(currentIndex === null) return;
+  if(!t){ toast('先输入文字'); return; }
+  const cell = state.cells[currentIndex] || {};
+  state.cells[currentIndex] = { kind: 'text', text: t, caption: (cell.caption || $('capInput').value || '').trim() };
+  persist(); draw(); syncMobile(); closeModal(pickerEl);
+});
+
+$('clearBtn').addEventListener('click', ()=>{
+  if(currentIndex === null) return;
+  state.cells[currentIndex] = null;
+  persist(); draw(); syncMobile(); closeModal(pickerEl);
+});
+
+$('capSaveBtn').addEventListener('click', ()=>{
+  if(currentIndex === null) return;
+  const v = $('capInput').value.trim();
+  const cell = state.cells[currentIndex];
+  if(!cell){ toast('该格还没有内容'); return; }
+  cell.caption = v;
+  persist(); draw(); syncMobile();
+  toast(v ? '标签已更新' : '已恢复默认格名');
+});
+
+/* --- 搜索框事件 --- */
+// 按钮直接触发搜索，并阻止默认提交，避免 click+submit 双重触发
+$('searchBtn').addEventListener('click', ev=>{
+  ev.preventDefault();
+  runSearch();
+});
+$('searchForm').addEventListener('submit', ev=>{
+  ev.preventDefault();
+  runSearch();
+});
+
+let suggTimer = null;
+qInput.addEventListener('input', ()=>{
+  const v = qInput.value.trim();
+  clearTimeout(suggTimer);
+  if(v.length < 2 || hasCJK(v)){ suggEl.hidden = true; return; }
+  suggTimer = setTimeout(async ()=>{
+    try{
+      const data = await api(SAPI + '/cards/autocomplete?q=' + encodeURIComponent(v));
+      const names = (data.data || []).slice(0, 10);
+      if(!names.length || qInput.value.trim() !== v){ suggEl.hidden = true; return; }
+      suggEl.innerHTML = names.map(n=> '<div data-n="' + esc(n) + '">' + esc(n) + '</div>').join('');
+      suggEl.hidden = false;
+      suggEl.querySelectorAll('div').forEach(d=>{
+        d.addEventListener('click', async ()=>{
+          suggEl.hidden = true;
+          qInput.value = d.dataset.n;
+          setSearchNote('载入「' + d.dataset.n + '」…');
+          try{
+            const card = await api(SAPI + '/cards/named?exact=' + encodeURIComponent(d.dataset.n));
+            currentCard = card;
+            renderResults([card]);
+            document.querySelector('.ritem')?.classList.add('on');
+            setSearchNote('点击卡牌查看全部版本。');
+            loadVersions(card, printLang);
+          }catch(err){
+            setSearchNote(err.message || '载入失败', true);
+          }
+        });
+      });
+    }catch(err){ suggEl.hidden = true; }
+  }, 260);
+});
+qInput.addEventListener('keydown', ev=>{
+  if(ev.key === 'Enter'){ ev.preventDefault(); runSearch(); }
+});
+document.addEventListener('click', ev=>{
+  if(!suggEl.contains(ev.target) && ev.target !== qInput) suggEl.hidden = true;
+});
+
+/* ============================================================
+   设置面板
+   ============================================================ */
+function labeledCount(){ return state.cols * state.rows; }
+
+function syncPanel(){
+  $('titleInput').value = state.title;
+  $('colsInput').value = state.cols;
+  $('rowsInput').value = state.rows;
+  $('labelsInput').value = state.labels.join('\n');
+  $('labelCount').textContent = labeledCount();
+  $('footerInput').value = state.footer;
+  $('footerShow').checked = state.showFooter;
+  $('fmtSel').value = state.format;
+  $('scaleSel').value = String(state.scale);
+}
+
+function normalizeLabels(){
+  const n = labeledCount();
+  const arr = state.labels.slice(0, n);
+  // 扩大网格时用 anime-grid 默认分类续填，超出部分留空
+  while(arr.length < n) arr.push(DEFAULT_LABELS[arr.length] || '');
+  state.labels = arr;
+  const cells = state.cells.slice(0, n);
+  while(cells.length < n) cells.push(null);
+  state.cells = cells;
+}
+
+/* ============================================================
+   移动端格子列表（窄屏下的主要编辑入口）
+   ============================================================ */
+const mobileMQ = window.matchMedia('(max-width:760px)');
+function isMobile(){ return mobileMQ.matches; }
+
+function setLabel(i, v){
+  state.labels[i] = v;
+  const cell = state.cells[i];
+  if(cell && cell.caption) cell.caption = ''; // 列表里改名即取消该格的自定义标签
+  persist();
+  draw();
+}
+
+function syncMobile(){
+  const list = $('cellList');
+  if(!list) return;
+  if(!isMobile()){ list.innerHTML = ''; return; }
+  const n = labeledCount();
+  let html = '';
+  for(let i = 0; i < n; i++){
+    const cell = state.cells[i];
+    const label = labelOf(i);
+    const thumbPath = cell && cell.card && cell.card.image ? cell.card.image.replace('/large/', '/small/') : '';
+    const thumb = thumbPath
+      ? '<img class="thumb" src="' + esc(thumbPath) + '" alt="" loading="lazy">'
+      : '<div class="thumb">' + (cell && cell.kind === 'text' ? '文' : '＋') + '</div>';
+    const sub = !cell ? '空'
+      : cell.kind === 'text'
+        ? '文字：' + cell.text
+        : ((cell.card.printed_name || cell.card.name) + ' · ' + (cell.card.set_name || cell.card.set) + ' #' + cell.card.collector_number);
+    html += '<div class="cell-row">' +
+      '<span class="idx">' + (i + 1) + '</span>' + thumb +
+      '<div class="meta">' +
+        '<input class="label-input" data-i="' + i + '" value="' + esc(label) + '" placeholder="格名">' +
+        '<div class="sub">' + esc(sub) + '</div>' +
+      '</div>' +
+      '<div class="acts">' +
+        '<button class="mini" data-pick="' + i + '">' + (cell ? '更换' : '选择') + '</button>' +
+        '<button class="mini danger" data-clear="' + i + '">清空</button>' +
+      '</div></div>';
+  }
+  list.innerHTML = html;
+
+  list.querySelectorAll('.label-input').forEach(inp=>{
+    const i = +inp.dataset.i;
+    inp.addEventListener('input', ()=> setLabel(i, inp.value));
+    inp.addEventListener('change', ()=> syncMobile());
+  });
+  list.querySelectorAll('[data-pick]').forEach(b=>{
+    b.addEventListener('click', ()=> openPicker(+b.dataset.pick));
+  });
+  list.querySelectorAll('[data-clear]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const i = +b.dataset.clear;
+      if(!state.cells[i]) return;
+      state.cells[i] = null;
+      persist(); draw(); syncMobile();
+    });
+  });
+}
+
+mobileMQ.addEventListener('change', ()=>{ applyCanvasWidth(); syncMobile(); });
+
+$('titleInput').addEventListener('input', e=>{ state.title = e.target.value; persist(); draw(); });
+$('footerInput').addEventListener('input', e=>{ state.footer = e.target.value; persist(); resizeCanvas(); draw(); });
+$('footerShow').addEventListener('change', e=>{ state.showFooter = e.target.checked; persist(); resizeCanvas(); draw(); });
+$('fmtSel').addEventListener('change', e=>{ state.format = e.target.value; persist(); });
+$('scaleSel').addEventListener('change', e=>{ state.scale = +e.target.value; persist(); });
+
+$('colsInput').addEventListener('change', e=>{
+  const v = Math.max(1, Math.min(8, parseInt(e.target.value, 10) || 5));
+  state.cols = v; e.target.value = v;
+  normalizeLabels(); persist(); syncPanel(); syncMobile(); resizeCanvas(); draw();
+});
+$('rowsInput').addEventListener('change', e=>{
+  const v = Math.max(1, Math.min(8, parseInt(e.target.value, 10) || 3));
+  state.rows = v; e.target.value = v;
+  normalizeLabels(); persist(); syncPanel(); syncMobile(); resizeCanvas(); draw();
+});
+$('labelsInput').addEventListener('input', e=>{
+  state.labels = e.target.value.split('\n').map(s=> s.trim());
+  normalizeLabels();
+  $('labelCount').textContent = labeledCount();
+  persist(); draw(); syncMobile();
+});
+
+$('defaultLabelsBtn').addEventListener('click', ()=>{
+  const n = labeledCount();
+  state.labels = DEFAULT_LABELS.slice(0, n);
+  while(state.labels.length < n) state.labels.push('');
+  persist(); syncPanel(); draw(); syncMobile();
+  toast('已套用默认格名');
+});
+
+$('clearLabelsBtn').addEventListener('click', ()=>{
+  state.labels = new Array(labeledCount()).fill('');
+  persist(); syncPanel(); draw(); syncMobile();
+});
+
+$('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('清空全部格子的内容？格名与标题会保留。')) return;
+  state.cells = new Array(labeledCount()).fill(null);
+  persist(); draw(); syncMobile();
+});
+
+/* 配置导入导出 */
+$('saveJsonBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.title || 'mtg-grid') + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
+});
+$('loadJsonBtn').addEventListener('click', ()=> $('fileInput').click());
+$('fileInput').addEventListener('change', async e=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  try{
+    const data = JSON.parse(await file.text());
+    if(!data || typeof data !== 'object') throw new Error('格式不正确');
+    state.title = String(data.title || state.title);
+    state.cols = Math.max(1, Math.min(8, +data.cols || 5));
+    state.rows = Math.max(1, Math.min(8, +data.rows || 3));
+    state.labels = Array.isArray(data.labels) ? data.labels.map(String) : DEFAULT_LABELS.slice();
+    state.cells = Array.isArray(data.cells) ? data.cells : new Array(state.cols * state.rows).fill(null);
+    state.footer = String(data.footer != null ? data.footer : state.footer);
+    state.showFooter = data.showFooter !== false;
+    normalizeLabels();
+    loadAllImages();
+    persist(); syncPanel(); syncMobile(); resizeCanvas(); draw();
+    toast('配置已导入');
+  }catch(err){
+    toast('导入失败：' + err.message);
+  }finally{
+    e.target.value = '';
+  }
+});
+
+/* ============================================================
+   导出图片
+   ============================================================ */
+function pendingImages(){
+  const list = [];
+  for(let i = 0; i < state.cells.length; i++){
+    const c = state.cells[i];
+    if(c && c.card && c.card.image){
+      const e = imgCache.get(c.card.image);
+      if(!e || !e.loaded) list.push(c.card.image);
+    }
+  }
+  return list;
+}
+
+$('exportBtn').addEventListener('click', async ()=>{
+  const btn = $('exportBtn');
+  btn.disabled = true;
+  const ori = btn.textContent;
+
+  // 等待所有图片就绪（最多 20 秒）
+  const missing = pendingImages();
+  missing.forEach(u=> ensureImage(u));
+  const t0 = Date.now();
+  while(pendingImages().length && Date.now() - t0 < 20000){
+    btn.textContent = '载入图片 ' + pendingImages().length + '…';
+    await sleep(120);
+  }
+  if(pendingImages().length){
+    toast('部分图片未能载入，已按占位生成');
+  }
+
+  btn.textContent = '生成中…';
+  await sleep(30);
+
+  const scale = Math.max(1, Math.min(3, state.scale));
+  const out = document.createElement('canvas');
+  out.width = Math.round(canvas.width / 2 * scale);
+  out.height = Math.round(canvas.height / 2 * scale);
+  const octx = out.getContext('2d');
+  octx.imageSmoothingQuality = 'high';
+  octx.drawImage(canvas, 0, 0, out.width, out.height);
+
+  const mime = state.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+  const ext = state.format === 'jpeg' ? 'jpg' : 'png';
+  let dataUrl;
+  try{
+    dataUrl = out.toDataURL(mime, 0.92);
+  }catch(err){
+    toast('导出失败：' + err.message);
+    btn.disabled = false; btn.textContent = ori;
+    return;
+  }
+
+  $('previewImg').src = dataUrl;
+  $('previewSize').textContent = out.width + ' × ' + out.height;
+  const name = (state.title || '万智牌生涯个人喜好表').replace(/[\\/:*?"<>|]/g, '_') + '.' + ext;
+  const link = $('downloadLink');
+  link.href = dataUrl;
+  link.download = name;
+  $('preview').hidden = false;
+  document.body.classList.add('locked');
+
+  btn.disabled = false;
+  btn.textContent = ori;
+});
+
+/* ============================================================
+   持久化
+   ============================================================ */
+function persist(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(err){ /* 配额超限忽略 */ }
+}
+function restore(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(!data || typeof data !== 'object') return;
+    state.title = String(data.title != null ? data.title : state.title);
+    state.cols = Math.max(1, Math.min(8, +data.cols || 5));
+    state.rows = Math.max(1, Math.min(8, +data.rows || 3));
+    state.labels = Array.isArray(data.labels) ? data.labels.map(String) : DEFAULT_LABELS.slice();
+    state.cells = Array.isArray(data.cells) ? data.cells : [];
+    state.footer = String(data.footer != null ? data.footer : state.footer);
+    state.showFooter = data.showFooter !== false;
+    state.format = data.format === 'jpeg' ? 'jpeg' : 'png';
+    state.scale = [1,2,3].includes(+data.scale) ? +data.scale : 2;
+    normalizeLabels();
+  }catch(err){ /* 忽略损坏数据 */ }
+}
+
+function loadAllImages(){
+  state.cells.forEach(c=>{ if(c && c.card && c.card.image) ensureImage(c.card.image); });
+}
+
+/* ============================================================
+   启动
+   ============================================================ */
+restore();
+normalizeLabels();
+syncPanel();
+resizeCanvas();
+loadAllImages();
+draw();
+syncMobile();
+
+// 视口变化：画布宽度随容器自适应，窄屏/宽屏切换时刷新格子列表
+window.addEventListener('resize', ()=>{ applyCanvasWidth(); draw(); });
+
+})();
+</script>
+</body>
+</html>
