@@ -70,6 +70,9 @@
   .pane.search{flex:1 1 52%;border-right:1px solid #eee;padding:14px 16px}
   .pane.versions{flex:1 1 48%;padding:14px 16px;background:#fafafa}
   .pane.versions[hidden]{display:none}
+  /* 选中卡牌后：版本列表占满整块弹窗，多列排布以便一屏看到更多印张 */
+  .sheet.picking .pane.search{display:none}
+  .sheet.picking .pane.versions{flex:1 1 100%;border-right:none;background:#fff}
   form.searchbar{display:flex;gap:8px;margin:0}
   form.searchbar input{flex:1}
   .sugg{margin-top:6px;border:1px solid #e2e2e2;border-radius:5px;overflow:hidden;max-height:180px;overflow-y:auto}
@@ -94,12 +97,16 @@
   .langs{display:flex;gap:4px;margin-left:auto}
   .langs button{padding:3px 8px;font-size:12px;border:1.2px solid #ccc;color:#444;font-weight:500;background:#fff}
   .langs button.on{background:#111;border-color:#111;color:#fff}
-  .vlist{overflow-y:auto;flex:1 1 auto;display:flex;flex-direction:column;gap:6px;padding-right:2px}
-  .vitem{display:flex;gap:10px;padding:6px;border-radius:6px;cursor:pointer;align-items:center;transition:background .12s}
-  .vitem:hover{background:#ededed}
-  .vitem img{width:64px;border-radius:4px;background:#e6e6e6;aspect-ratio:488/680;object-fit:cover;flex:0 0 auto}
+  .vlist{
+    overflow-y:auto;flex:1 1 auto;min-height:0;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));
+    gap:6px;align-content:start;padding-right:2px
+  }
+  .vitem{display:flex;gap:10px;padding:7px;min-height:96px;border:1px solid #ececec;border-radius:6px;cursor:pointer;align-items:center;transition:background .12s,border-color .12s}
+  .vitem:hover{background:#f4f4f4;border-color:#dedede}
+  .vitem img{width:62px;border-radius:4px;background:#e6e6e6;aspect-ratio:488/680;object-fit:cover;flex:0 0 auto}
   .vmeta{min-width:0;font-size:12px;line-height:1.45}
-  .vmeta .vname{font-size:12.5px;font-weight:600;color:#111;word-break:break-word}
+  .vmeta .vname{font-size:12.5px;font-weight:600;color:#111;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .vmeta .vsub{color:#666;word-break:break-word}
   .vmeta .vsub.dim{color:#aaa}
   .sheet-foot{border-top:1px solid #eee;padding:12px 16px;display:flex;flex-direction:column;gap:8px;background:#fff}
@@ -301,14 +308,6 @@
 
     <div class="sheet-foot">
       <div class="fr">
-        <label>标签文字</label>
-        <input type="text" id="capInput" placeholder="留空则使用默认格名">
-        <button class="mini" id="capSaveBtn">保存标签</button>
-      </div>
-      <div class="fr">
-        <label>或填文字</label>
-        <input type="text" id="freeText" placeholder="不配图，直接在格里写字">
-        <button class="mini" id="textBtn">填入文字</button>
         <button class="mini danger" id="clearBtn">清空此格</button>
         <button class="mini" data-close>关闭</button>
       </div>
@@ -359,11 +358,11 @@ const FOOTER_H = 22;
 
 const RARITY_CN = {common:'普通',uncommon:'非普通',rare:'稀有',mythic:'秘稀',special:'特殊',bonus:'附赠'};
 
-// 默认格名沿用 anime-grid（动画生涯个人喜好表）的分类；5列×3行时取前 15 个
+// 默认格名：万智牌版分类；5列×3行时取前 15 个
 const DEFAULT_LABELS = [
-  '入坑作','最喜欢','看最多次','最想安利','最佳剧情',
-  '最佳画面','最佳配乐','最佳配音','最治愈','最感动',
-  '最虐心','最被低估','最过誉','最离谱','最讨厌'
+  '入坑卡','最爱卡牌','用得最多','最弱单卡','最想重印',
+  '最佳画作','最佳风味文字','最佳设计','最强单卡','最被低估',
+  '最佳故事','最有纪念意义','最小众','最过誉','最讨厌'
 ];
 
 /* ============================================================
@@ -762,12 +761,14 @@ const versionsPane = $('versionsPane');
 const vlistEl = $('vlist');
 const vNameEl = $('vName');
 const morePrintsBtn = $('morePrints');
+const sheetEl = pickerEl.querySelector('.sheet');
 
 function openPicker(index){
   currentIndex = index;
   currentCard = null;
   printPageUrl = null;
   versionsPane.hidden = true;
+  sheetEl.classList.remove('picking');
   resultsEl.innerHTML = '';
   resultsEl._cards = [];
   suggEl.hidden = true;
@@ -777,8 +778,6 @@ function openPicker(index){
   const cell = state.cells[index];
   setLang(cell && cell.card && cell.card.lang ? cell.card.lang : 'en');
   $('cellTag').textContent = '第 ' + (index + 1) + ' 格' + (label ? ' · ' + label : '');
-  $('capInput').value = (cell && cell.caption) || '';
-  $('freeText').value = (cell && cell.kind === 'text' && cell.text) || '';
   setSearchBusy(false);
   setSearchNote(cell && cell.card
     ? '已选卡牌，可直接重新搜索替换。点击下方卡牌查看全部版本。'
@@ -948,6 +947,7 @@ function printsUrl(card, lang){
 
 async function loadVersions(card, lang){
   versionsPane.hidden = false;
+  sheetEl.classList.add('picking');
   vNameEl.textContent = (card.printed_name || card.name) + (card.printed_name && card.printed_name !== card.name ? ' / ' + card.name : '');
   vlistEl.innerHTML = '<div class="note">载入版本…</div>';
   morePrintsBtn.hidden = true;
@@ -1021,17 +1021,20 @@ document.querySelectorAll('#langs button').forEach(b=>{
   });
 });
 
-$('backBtn').addEventListener('click', ()=>{ versionsPane.hidden = true; qInput.focus(); });
+$('backBtn').addEventListener('click', ()=>{
+  versionsPane.hidden = true;
+  sheetEl.classList.remove('picking');
+  qInput.focus();
+});
 
 /* --- 应用卡牌到格子 --- */
 function applyCard(card){
   if(currentIndex === null) return;
   const image = cardImage(card, 'large') || cardImage(card, 'normal') || '';
   const cell = state.cells[currentIndex] || {};
-  const caption = (cell.caption || $('capInput').value || '').trim();
   state.cells[currentIndex] = {
     kind: 'card',
-    caption: caption,
+    caption: (cell.caption || '').trim(),
     card: {
       id: card.id,
       name: card.name,
@@ -1053,30 +1056,11 @@ function applyCard(card){
   toast('已放入第 ' + (currentIndex + 1) + ' 格');
 }
 
-/* --- 文字格 / 清空 / 标签 --- */
-$('textBtn').addEventListener('click', ()=>{
-  const t = $('freeText').value.trim();
-  if(currentIndex === null) return;
-  if(!t){ toast('先输入文字'); return; }
-  const cell = state.cells[currentIndex] || {};
-  state.cells[currentIndex] = { kind: 'text', text: t, caption: (cell.caption || $('capInput').value || '').trim() };
-  persist(); draw(); syncMobile(); closeModal(pickerEl);
-});
-
+/* --- 清空此格 --- */
 $('clearBtn').addEventListener('click', ()=>{
   if(currentIndex === null) return;
   state.cells[currentIndex] = null;
   persist(); draw(); syncMobile(); closeModal(pickerEl);
-});
-
-$('capSaveBtn').addEventListener('click', ()=>{
-  if(currentIndex === null) return;
-  const v = $('capInput').value.trim();
-  const cell = state.cells[currentIndex];
-  if(!cell){ toast('该格还没有内容'); return; }
-  cell.caption = v;
-  persist(); draw(); syncMobile();
-  toast(v ? '标签已更新' : '已恢复默认格名');
 });
 
 /* --- 搜索框事件 --- */
